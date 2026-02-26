@@ -1,10 +1,19 @@
 export class AudioRecorder {
-    private mediaRecorder: MediaRecorder | undefined;
-    private stream: MediaStream | undefined;
+    private mediaRecorder?: MediaRecorder;
+    private stream?: MediaStream;
     private chunks: BlobPart[] = [];
 
     async start(): Promise<void> {
-        this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (this.isRecording()) {
+            throw new Error("Recorder already started");
+        }
+
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (error) {
+            throw new Error("Microphone access denied");
+        }
+
         this.mediaRecorder = new MediaRecorder(this.stream);
         this.chunks = [];
 
@@ -17,7 +26,15 @@ export class AudioRecorder {
         this.mediaRecorder.start();
     }
 
-    async stop(): Promise<Blob> {
+    private isRecording(): boolean {
+        return this.mediaRecorder?.state === "recording";
+    }
+
+    async stop(): Promise<Blob | null> {
+        if (!this.isRecording()) {
+            return null;
+        }
+
         return new Promise((resolve) => {
             this.mediaRecorder!.onstop = () => {
                 const blob = new Blob(this.chunks, { type: "audio/webm" });
@@ -26,6 +43,7 @@ export class AudioRecorder {
 
                 this.mediaRecorder = undefined;
                 this.stream = undefined;
+                this.chunks = [];
 
                 resolve(blob);
             };

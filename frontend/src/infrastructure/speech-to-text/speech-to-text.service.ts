@@ -1,6 +1,13 @@
-export interface SpeechToTextService {
-    readonly type: "browser" | "backend";
+export class SpeechToTextError extends Error {
+    constructor(
+        message: string
+    ) {
+        super(message);
+    }
+}
 
-    start(): Promise<void>;
-    stop(audio: Blob): Promise<string>;
+export interface SpeechToTextService {
+    start(): void;
+    stop(audio?: Blob): Promise<string>;
+    abort(): void;
 }

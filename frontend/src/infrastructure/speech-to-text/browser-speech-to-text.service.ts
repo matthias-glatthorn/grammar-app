@@ -1,63 +1,79 @@
-import type { SpeechToTextService } from "./speech-to-text.service";
-
-type EndReason = "manual" | "error" | null;
+import { SpeechToTextError, type SpeechToTextService } from "./speech-to-text.service";
 
 export class BrowserSpeechToTextService implements SpeechToTextService {
-    readonly type = "browser";
+    private recognition: any;
+    private isStopping = false;
     
     private transcript = "";
+    private stopResolve?: (text: string) => void;
+    private errorHandler?: (error: SpeechToTextError) => void;
 
-    start(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-            const recognition = new SpeechRecognition();
-            recognition.lang = "de-DE";
-            recognition.interimResults = false;
-            recognition.continuous = true;
-            let endReason: EndReason = null;
+    onError(cb: (error: SpeechToTextError) => void) {
+        this.errorHandler = cb;
+    }
 
-            this.transcript = "";
-            recognition.onresult = (event: any) => {
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        this.transcript += event.results[i][0].transcript + " ";
-                    }
+    start() {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        this.recognition.lang = "de-DE";
+        this.recognition.interimResults = true;
+        this.recognition.continuous = true;
+        this.isStopping = false;
+
+        this.transcript = "";
+        this.recognition.onresult = (event: any) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    this.transcript += event.results[i][0].transcript + " ";
                 }
-            };
+            }
+        };
 
-            recognition.onerror = (event: any) => {
-                endReason = "error";
-                recognition.stop();
-                reject(new Error(event.error ?? "Speech recognition error"));
+        this.recognition.onerror = (event: any) => {
+            if (event.error === "aborted") return;
+
+            this.isStopping = true;
+            this.recognition.stop();
+
+            const error = new SpeechToTextError(event.error);
+            this.errorHandler?.(error);
+        }
+
+        this.recognition.onend = () => {
+            if (this.isStopping) {
+                const result = this.transcript.trim();
+                this.stopResolve?.(result);
+                this.cleanup();
+                return;
             }
 
-            recognition.onend = () => {
-                if (endReason === "error") {
-                    return;
-                }
-                if (endReason === "manual") {
-                    resolve();
-                    return;
-                }
-                recognition.start();
-            };
+            this.recognition.start();
+        };
 
-            recognition.start();
-        });
-
-
-        
-        
-
-
-
-
-
+        this.recognition.start();
     }
 
     stop(): Promise<string> {
+        if (!this.recognition) {
+            return Promise.resolve("");
+        }
+
         return new Promise((resolve) => {
-            resolve(this.transcript.trim());
+            this.isStopping = true;
+            this.stopResolve = resolve;
+
+            this.recognition.stop();
         });
+    }
+
+    abort(): void {
+        this.isStopping = true;
+        this.recognition?.abort();
+        this.cleanup();
+    }
+
+    private cleanup() {
+        this.recognition = null;
+        this.stopResolve = undefined;
     }
 }

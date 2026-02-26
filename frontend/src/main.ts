@@ -1,7 +1,7 @@
 import { AudioRecorder } from './infrastructure/audio-recorder/audio-recorder';
 import { BackendSpeechToTextService } from './infrastructure/speech-to-text/backend-speech-to-text.service';
 import { BrowserSpeechToTextService } from './infrastructure/speech-to-text/browser-speech-to-text.service';
-import type { SpeechToTextService } from './infrastructure/speech-to-text/speech-to-text.service';
+import { SpeechToTextError, type SpeechToTextService } from './infrastructure/speech-to-text/speech-to-text.service';
 import { createAppState } from './state/app-state';
 import './style.css'
 
@@ -32,8 +32,7 @@ const resetBtnEl = document.querySelector<HTMLButtonElement>("#reset-btn")!;
 const audioRecorder = new AudioRecorder();
 let audioUrl = "";
 
-let speechToTextService: SpeechToTextService = 
-    isSpeechToTextSupported() ? new BrowserSpeechToTextService() : new BackendSpeechToTextService();
+let speechToTextService: SpeechToTextService = createSpeechToTextService();
 
 let originalText = "";
 
@@ -46,27 +45,22 @@ recordBtnEl.addEventListener("click", async () => {
             const isValid = emailInputEl.checkValidity();
             if (isValid) {
                 await audioRecorder.start();
-                try {
-                    await speechToTextService.start();
-                } catch (error) {
-
-                    if (speechToTextService.type === "browser") {
-                        speechToTextService = new BackendSpeechToTextService();
-                    } else {
-                        throw error;
-                    }
-                }
-                
                 appState.set("recording");
+                speechToTextService.start();
             }
+
             emailInputEl.reportValidity()
             break;
         case "recording":
             const audioBlob = await audioRecorder.stop();
+            if (!audioBlob) {
+                console.warn("No audio recorded");
+                appState.set("idle");
+                return;
+            }
             audioUrl = URL.createObjectURL(audioBlob);
             audioEl.src = audioUrl;
             appState.set("stt");
-
             originalText = await speechToTextService.stop(audioBlob);
             appState.set("done");
             break;
@@ -77,6 +71,9 @@ resetBtnEl.addEventListener("click", async () => {
     originalText = "";
     audioUrl = "";
     await audioRecorder.stop();
+
+    speechToTextService.abort();
+
     appState.set("idle");
 });
 
@@ -117,6 +114,26 @@ function render() {
             recordBtnEl.disabled = true;
             break;
     }
+}
+
+function createSpeechToTextService() {
+    if (isSpeechToTextSupported()) {
+        const browserSTT = new BrowserSpeechToTextService();
+        browserSTT.onError((error) => {
+            if (
+                error instanceof SpeechToTextError &&
+                error.message === "network"
+            ) {
+                console.warn("Fallback to backend due to network error");
+                speechToTextService = new BackendSpeechToTextService();
+                return;
+            }
+            appState.set("done");
+            throw error;
+        });
+        return browserSTT;
+    }
+    return new BackendSpeechToTextService();
 }
 
 function isSpeechToTextSupported(): boolean {

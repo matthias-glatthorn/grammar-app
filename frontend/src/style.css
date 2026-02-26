@@ -112,3 +112,7 @@ select:hover {
     background-color: #f9f9f9;
   }
 }
+
+.original-text {
+    margin-bottom: 1em;
+}

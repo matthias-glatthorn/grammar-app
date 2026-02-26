@@ -1,4 +1,4 @@
-export type ApplicationState = "idle" | "recording" | "done";
+export type ApplicationState = "idle" | "recording" | "stt" | "done";
 
 export function createAppState(renderFn: () => void) {
     let state: ApplicationState = "idle";

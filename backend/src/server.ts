@@ -10,14 +10,14 @@ dotenv.config();
 dotenv.config({ path: ".env.local" });
 const app = express();
 
-const corsOrigin = process.env.CORS_ORIGIN;
+const corsOrigins = process.env.CORS_ORIGIN?.split(",");
 
-if (!corsOrigin) {
-  throw new Error("CORS_ORIGIN is not defined");
+if (!corsOrigins || corsOrigins.length === 0) {
+  throw new Error("CORS_ORIGIN is not defined or empty");
 }
 
 app.use(cors({
-  origin: corsOrigin
+  origin: corsOrigins
 }));
 app.use(express.json());
 

@@ -4,7 +4,10 @@ import { STTService } from "../services/stt/stt.service";
 
 export const createSTTRouter = (sttService: STTService) => {
     const router = Router();
-    const upload = multer();
+
+    const upload = multer({
+        limits: { fileSize: 5 * 1024 * 1024 }
+    });
 
     router.post("/transcribe", upload.single("audio"), async (req, res) => {
         const file = req.file;

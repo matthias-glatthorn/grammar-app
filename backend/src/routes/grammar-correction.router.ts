@@ -1,17 +1,21 @@
 import { Router } from "express";
 import { GrammarCorrectionService } from "../services/grammar-correction/grammar-correction.service";
 
-export const createGrammarRouter = ( grammarService: GrammarCorrectionService) => {
+export const createGrammarRouter = (grammarService: GrammarCorrectionService) => {
     const router = Router();
 
     router.post("/check", async (req, res) => {
-      const { text } = req.body ?? {};
+        const { text, email } = req.body ?? {};
 
-      if (typeof text !== "string" || text.trim().length === 0) {
-        return res.status(400).json({
-          message: "Text must not be empty"
-        });
-      }
+        if (!email || typeof email !== "string") {
+            return res.status(400).json({ message: "Email required" });
+        }
+
+        if (typeof text !== "string" || text.trim().length === 0) {
+            return res.status(400).json({
+                message: "Text must not be empty"
+            });
+        }
 
         try {
             const result = await grammarService.correct(req.body);
@@ -25,5 +29,5 @@ export const createGrammarRouter = ( grammarService: GrammarCorrectionService) =
         }
     });
 
-  return router;
+    return router;
 }

@@ -113,6 +113,6 @@ select:hover {
   }
 }
 
-.original-text {
+.original-text, .corrected-text {
     margin-bottom: 1em;
 }

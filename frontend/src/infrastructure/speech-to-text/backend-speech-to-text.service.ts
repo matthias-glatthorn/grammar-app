@@ -1,3 +1,4 @@
+import { transcribe } from "../api/speech-to-text-api-client";
 import type { SpeechToTextService } from "./speech-to-text.service";
 
 export class BackendSpeechToTextService implements SpeechToTextService {
@@ -6,7 +7,8 @@ export class BackendSpeechToTextService implements SpeechToTextService {
     }
 
     async stop(audioBlob: Blob): Promise<string> {
-        return "Stub transcript";
+        const { text } = await transcribe(audioBlob);
+        return text;
     }
 
     abort() {

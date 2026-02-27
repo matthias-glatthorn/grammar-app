@@ -1,5 +1,6 @@
 import { SpeechToTextError, type SpeechToTextService } from "./speech-to-text.service";
 
+
 export class BrowserSpeechToTextService implements SpeechToTextService {
     private recognition: any;
     private isStopping = false;
@@ -13,7 +14,7 @@ export class BrowserSpeechToTextService implements SpeechToTextService {
     }
 
     start() {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
         this.recognition.lang = "de-DE";
         this.recognition.interimResults = true;

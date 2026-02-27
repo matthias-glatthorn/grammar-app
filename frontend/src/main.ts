@@ -67,9 +67,31 @@ recordBtnEl.addEventListener("click", async () => {
             audioUrl = URL.createObjectURL(audioBlob);
             audioEl.src = audioUrl;
             appState.set("stt");
-            originalText = await speechToTextService.stop(audioBlob);
+            try {
+                originalText = await speechToTextService.stop(audioBlob);
+                console.log("Original text:", originalText);
+            } catch (error) {
+                console.warn("Primary STT failed, falling back to backend:", error);
+
+                const fallbackSTT = new BackendSpeechToTextService();
+
+                try {
+                    
+                    originalText = await fallbackSTT.stop(audioBlob);
+                } catch (fallbackError) {
+                    console.error("Fallback STT also failed:", fallbackError);
+                    appState.set("idle");
+                    return;
+                }
+            }
             appState.set("correcting");
-            correctedText = await grammarCorrectionService.correct(emailInputEl.value, originalText);
+            try {
+                correctedText = await grammarCorrectionService.correct(emailInputEl.value, originalText);
+            } catch (error) {
+                console.error("Grammar correction failed:", error);
+                appState.set("done");
+                return;
+            }
             appState.set("speaking");
             try {
                 await speakText(correctedText);
@@ -88,6 +110,8 @@ resetBtnEl.addEventListener("click", async () => {
     await audioRecorder.stop();
 
     speechToTextService.abort();
+
+    URL.revokeObjectURL(audioUrl);
 
     appState.set("idle");
 });
@@ -154,21 +178,12 @@ function render() {
     }
 }
 
-function createSpeechToTextService() {
+function createSpeechToTextService(): SpeechToTextService {
     if (isSpeechToTextSupported()) {
         const browserSTT = new BrowserSpeechToTextService();
         browserSTT.onError((error) => {
-            if (
-                error instanceof SpeechToTextError &&
-                error.message === "network"
-            ) {
-                console.warn("Fallback to backend due to network error");
-                speechToTextService = new BackendSpeechToTextService();
-                return;
-            }
-            appState.set("done");
-            throw error;
-        });
+            console.warn("Browser STT error:", error);
+        })
         return browserSTT;
     }
     return new BackendSpeechToTextService();

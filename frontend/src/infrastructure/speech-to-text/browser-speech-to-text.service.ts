@@ -4,7 +4,7 @@ import { SpeechToTextError, type SpeechToTextService } from "./speech-to-text.se
 export class BrowserSpeechToTextService implements SpeechToTextService {
     private recognition: any;
     private isStopping = false;
-    
+
     private transcript = "";
     private stopResolve?: (text: string) => void;
     private errorHandler?: (error: SpeechToTextError) => void;
@@ -56,7 +56,9 @@ export class BrowserSpeechToTextService implements SpeechToTextService {
 
     stop(): Promise<string> {
         if (!this.recognition) {
-            return Promise.resolve("");
+            return Promise.reject(
+                new SpeechToTextError("Speech recognition not initialized")
+            );
         }
 
         return new Promise((resolve) => {

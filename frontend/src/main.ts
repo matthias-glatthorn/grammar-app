@@ -113,6 +113,8 @@ resetBtnEl.addEventListener("click", async () => {
 
     speechToTextService.abort();
 
+    URL.revokeObjectURL(audioUrl);
+
     appState.set("idle");
 });
 

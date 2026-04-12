@@ -105,6 +105,8 @@ recordBtnEl.addEventListener("click", async () => {
 });
 
 resetBtnEl.addEventListener("click", async () => {
+    URL.revokeObjectURL(audioUrl);
+    
     originalText = "";
     audioUrl = "";
     await audioRecorder.stop();
@@ -116,16 +118,16 @@ resetBtnEl.addEventListener("click", async () => {
     appState.set("idle");
 });
 
-const ORIGINAL_PREFIX = "<strong>Original:</strong> ";
-const CORRECTED_PREFIX = "<strong>Corrected:</strong> ";
+const ORIGINAL_PREFIX = "Original: ";
+const CORRECTED_PREFIX = "Corrected: ";
 
 function render() {
     switch (appState.get()) {
         case "idle":
             emailInputEl.disabled = false;
             stateHeadlineEl.textContent = "Ready to record";
-            originalTextEl.innerHTML = "";
-            correctedTextEl.innerHTML = "";
+            originalTextEl.textContent = "";
+            correctedTextEl.textContent = "";
             audioEl.hidden = true;
             recordBtnEl.textContent = "Start Recording";
             recordBtnEl.disabled = false;
@@ -133,8 +135,8 @@ function render() {
         case "recording":
             emailInputEl.disabled = true;
             stateHeadlineEl.textContent = "Recording ...";
-            originalTextEl.innerHTML = "";
-            correctedTextEl.innerHTML = "";
+            originalTextEl.textContent = "";
+            correctedTextEl.textContent = "";
             audioEl.hidden = true;
             recordBtnEl.textContent = "Stop Recording";
             recordBtnEl.disabled = false;
@@ -142,8 +144,8 @@ function render() {
         case "stt":
             emailInputEl.disabled = true;
             stateHeadlineEl.textContent = "Converting speech to text ...";
-            originalTextEl.innerHTML = "";
-            correctedTextEl.innerHTML = "";
+            originalTextEl.textContent = "";
+            correctedTextEl.textContent = "";
             audioEl.hidden = false;
             recordBtnEl.textContent = "Stop Recording";
             recordBtnEl.disabled = true;
@@ -151,8 +153,8 @@ function render() {
         case "correcting":
             emailInputEl.disabled = true;
             stateHeadlineEl.textContent = "Correcting grammar ...";
-            originalTextEl.innerHTML = ORIGINAL_PREFIX + originalText;
-            correctedTextEl.innerHTML = "";
+            originalTextEl.textContent = ORIGINAL_PREFIX + originalText;
+            correctedTextEl.textContent = "";
             audioEl.hidden = false;
             recordBtnEl.textContent = "Stop Recording";
             recordBtnEl.disabled = true;
@@ -160,8 +162,8 @@ function render() {
         case "speaking":
             emailInputEl.disabled = true;
             stateHeadlineEl.textContent = "Speaking corrected text ...";
-            originalTextEl.innerHTML = ORIGINAL_PREFIX + originalText;
-            correctedTextEl.innerHTML = CORRECTED_PREFIX + correctedText;
+            originalTextEl.textContent = ORIGINAL_PREFIX + originalText;
+            correctedTextEl.textContent = CORRECTED_PREFIX + correctedText;
             audioEl.hidden = false;
             recordBtnEl.textContent = "Stop Recording";
             recordBtnEl.disabled = true;
@@ -169,8 +171,8 @@ function render() {
         case "done":
             emailInputEl.disabled = true;
             stateHeadlineEl.textContent = "Done!";
-            originalTextEl.innerHTML = ORIGINAL_PREFIX + originalText;
-            correctedTextEl.innerHTML = CORRECTED_PREFIX + correctedText;
+            originalTextEl.textContent = ORIGINAL_PREFIX + originalText;
+            correctedTextEl.textContent = CORRECTED_PREFIX + correctedText;
             audioEl.hidden = false;
             recordBtnEl.textContent = "Stop Recording";
             recordBtnEl.disabled = true;

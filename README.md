@@ -12,6 +12,12 @@ This project is a Single Page Application that allows users to:
 
 The implementation focuses on clean architecture, separation of concerns, and progressive enhancement using browser APIs.
 
+## Browser Compatibility
+
+The application is primarily optimized for Google Chrome, which provides the most reliable support for the required browser APIs (e.g. speech recognition and audio recording).
+
+The application has also been tested with Firefox and Brave. Due to differences in browser support, certain features (such as speech recognition) may fall back to backend-based processing or be limited in functionality.
+
 
 ## Development Setup & Run
 
